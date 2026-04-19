@@ -2,8 +2,10 @@ import {
   APPOINTMENT_STATUS_VALUES,
   USER_ROLE_VALUES,
   type Appointment,
+  type CreatePatientWithUserInput as CreatePatientWithUserInputType,
   type MedicalRecord,
   type Patient,
+  type PatientResponse as PatientResponseType,
   type Professional,
   type User,
 } from "@clinica/types/index";
@@ -79,6 +81,34 @@ export const createMedicalRecordInputSchema = medicalRecordSchema.omit({
   createdAt: true,
 });
 
+export const createPatientWithUserInputSchema = z
+  .object({
+    user: createUserInputSchema.omit({ role: true }).strict(),
+    patient: createPatientInputSchema.omit({ userId: true }).strict(),
+  })
+  .strict() satisfies z.ZodType<CreatePatientWithUserInputType>;
+
+export const patientResponseSchema = z
+  .object({
+    id: entityIdSchema,
+    birthDate: isoDateTimeSchema,
+    document: z.string().trim().min(1),
+    phone: z.string().trim().min(1),
+    createdAt: isoDateTimeSchema,
+    user: z
+      .object({
+        id: entityIdSchema,
+        name: z.string().trim().min(1),
+        email: z.string().email(),
+        role: userRoleSchema,
+        createdAt: isoDateTimeSchema,
+      })
+      .strict(),
+  })
+  .strict() satisfies z.ZodType<PatientResponseType>;
+
+export const patientListResponseSchema = z.array(patientResponseSchema);
+
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type CreatePatientInput = z.infer<typeof createPatientInputSchema>;
 export type CreateProfessionalInput = z.infer<typeof createProfessionalInputSchema>;
@@ -86,3 +116,7 @@ export type CreateAppointmentInput = z.infer<typeof createAppointmentInputSchema
 export type CreateMedicalRecordInput = z.infer<
   typeof createMedicalRecordInputSchema
 >;
+export type CreatePatientWithUserInput = z.infer<
+  typeof createPatientWithUserInputSchema
+>;
+export type PatientResponse = z.infer<typeof patientResponseSchema>;

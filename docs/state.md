@@ -3,8 +3,8 @@
 ## Snapshot
 
 Data da ultima atualizacao: 2026-04-19
-Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada inicial em `packages/*` foi implementada (tipos, enums, schemas Zod e regras puras).
-Proximo foco: conectar os contratos compartilhados ao primeiro modulo real da API (`patients`) e normalizar o ambiente de dependencias do workspace.
+Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente; modulo `patients` da API foi iniciado com `POST /patients` e `GET /patients`.
+Proximo foco: plugar persistencia real do modulo `patients` via Prisma assim que o runtime `@prisma/client` estiver disponivel no ambiente.
 
 ## Decisoes Consolidadas
 
@@ -46,19 +46,23 @@ Proximo foco: conectar os contratos compartilhados ao primeiro modulo real da AP
 
 - API Fastify possui endpoint inicial `GET /health`.
 - Teste de health check existe em `apps/api/test/health.spec.ts`.
-- Modulos de dominio ainda nao foram implementados.
-- Proximo modulo recomendado: `patients`.
+- Modulo `patients` foi criado em `apps/api/src/modules/patients` com separacao de `controller`, `service`, `repository` e `schema`.
+- Endpoint `POST /patients` implementado com validacao por schema compartilhado.
+- Endpoint `GET /patients` implementado com resposta validada por schema compartilhado.
+- Implementacao atual de repositorio de `patients` esta em memoria por limitacao de runtime Prisma no ambiente atual.
 
 ### Packages
 
 - Estrutura de pacotes existe em `packages/*`.
 - `packages/types`, `packages/validation` e `packages/domain` possuem `package.json`, `tsconfig`, exports e codigo inicial.
 - `packages/types` centraliza enums (`Role`, `AppointmentStatus`) e entidades (`User`, `Patient`, `Professional`, `Appointment`, `MedicalRecord`).
+- `packages/types` agora inclui tipos publicos de paciente (`CreatePatientWithUserInput`, `PatientPublicUser`, `PatientResponse`).
 - `packages/validation` centraliza schemas Zod das entidades e inputs de criacao (`create*InputSchema`).
+- `packages/validation` agora inclui `createPatientWithUserInputSchema`, `patientResponseSchema` e `patientListResponseSchema`.
 - `packages/domain` centraliza regras puras iniciais (`isValidUserName`, `hasRequiredAppointmentRelations`, `isValidIsoDateTime`, `canCreateMedicalRecord`).
 - Testes iniciais de dominio e validacao foram criados em cada pacote.
 - Existe um config de teste local `vitest.shared.config.mjs` para resolver alias e `zod` no ambiente atual.
-- Proximo foco tecnico recomendado: evoluir contratos compartilhados para suportar o primeiro modulo da API.
+- Proximo foco tecnico recomendado: consolidar esses contratos no fluxo completo com persistencia real em banco.
 
 ### Web
 
@@ -84,18 +88,18 @@ Proximo foco: conectar os contratos compartilhados ao primeiro modulo real da AP
 - SQL da migration inicial aplicado ao SQLite local.
 - Verificacao SQLite confirmou tabelas `User`, `Patient`, `Professional`, `Appointment` e `MedicalRecord`.
 - Verificacao SQLite confirmou indices unicos principais e FKs de `Appointment` e `MedicalRecord`.
-- `tsc --noEmit -p apps/api/tsconfig.json`: passou.
-- `vitest run` em `apps/api`: passou com 1 arquivo de teste e 1 teste.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts`: passou com 2 arquivos e 4 testes.
+- `tsc --noEmit -p apps/api/tsconfig.json`: falhou neste ambiente por deprecacao de `baseUrl` reportada pelo TypeScript local da API.
 - `tsc --noEmit -p packages/types/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/domain/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/validation/tsconfig.json`: falhou por resolucao de modulo `zod` no workspace raiz.
-- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 10 testes.
+- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 14 testes.
 
 Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker.
 
 ## Riscos / Atencoes
 
-- Os contratos compartilhados iniciais existem, mas ainda precisam ser revisados contra o primeiro modulo real da API.
+- O modulo `patients` da API foi iniciado, mas a persistencia ainda nao esta conectada ao Prisma por falta do runtime `@prisma/client` no ambiente.
 - O `typecheck` isolado de `packages/validation` ainda depende de normalizar resolucao de `zod` no workspace raiz.
 - `prisma migrate dev` e `prisma db push` falharam neste ambiente com erro interno do schema-engine sem detalhe. A migration foi versionada com SQL gerado por `prisma migrate diff` e aplicada ao SQLite via `sqlite3`.
 - Os documentos de contexto originais tinham problemas de encoding; arquivos novos devem permanecer em ASCII quando possivel.
@@ -103,9 +107,8 @@ Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes f
 
 ## Proximo Passo Recomendado
 
-Evoluir a base compartilhada em `packages/*` para suportar `patients`:
+Concluir o modulo `patients` com persistencia real:
 
-- Ajustar schemas de input para criacao composta `User + Patient`.
-- Definir shape publico de resposta de paciente com dados agregados de `User`.
-- Usar esses contratos no primeiro modulo real da API.
-- Normalizar instalacao/resolucao de dependencias no workspace para remover config de teste temporaria e habilitar `typecheck` completo de `packages/validation`.
+- Disponibilizar runtime `@prisma/client` no ambiente e substituir o repositorio em memoria por repositorio Prisma.
+- Manter os contratos compartilhados ja criados (`createPatientWithUserInputSchema` e `patientResponseSchema`) como fonte de validacao.
+- Revalidar `typecheck` da API e de `packages/validation` apos normalizar resolucao de dependencias no workspace.

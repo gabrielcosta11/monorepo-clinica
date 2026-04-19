@@ -45,3 +45,33 @@ export interface MedicalRecord {
   description: string;
   createdAt: ISODateTimeString;
 }
+
+export interface CreatePatientWithUserInput {
+  user: {
+    name: string;
+    email: string;
+    passwordHash: string;
+  };
+  patient: {
+    birthDate: ISODateTimeString;
+    document: string;
+    phone: string;
+  };
+}
+
+export interface PatientPublicUser {
+  id: EntityId;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: ISODateTimeString;
+}
+
+export interface PatientResponse {
+  id: EntityId;
+  birthDate: ISODateTimeString;
+  document: string;
+  phone: string;
+  createdAt: ISODateTimeString;
+  user: PatientPublicUser;
+}

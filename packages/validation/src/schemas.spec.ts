@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   appointmentSchema,
+  createPatientWithUserInputSchema,
   createPatientInputSchema,
   createUserInputSchema,
   medicalRecordSchema,
+  patientResponseSchema,
 } from "./schemas";
 
 describe("validation schemas", () => {
@@ -60,6 +62,79 @@ describe("validation schemas", () => {
       appointmentId: "",
       description: "Paciente com melhora clinica.",
       createdAt: "2026-04-19T12:00:00.000Z",
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts create patient with user input", () => {
+    const parsed = createPatientWithUserInputSchema.safeParse({
+      user: {
+        name: "Ana Lima",
+        email: "ana@example.com",
+        passwordHash: "hash123",
+      },
+      patient: {
+        birthDate: "1990-01-01T00:00:00.000Z",
+        document: "12345678900",
+        phone: "11999999999",
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects create patient with user input without user email", () => {
+    const parsed = createPatientWithUserInputSchema.safeParse({
+      user: {
+        name: "Ana Lima",
+        email: " ",
+        passwordHash: "hash123",
+      },
+      patient: {
+        birthDate: "1990-01-01T00:00:00.000Z",
+        document: "12345678900",
+        phone: "11999999999",
+      },
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it("accepts patient response schema", () => {
+    const parsed = patientResponseSchema.safeParse({
+      id: "pat-1",
+      birthDate: "1990-01-01T00:00:00.000Z",
+      document: "12345678900",
+      phone: "11999999999",
+      createdAt: "2026-04-19T12:00:00.000Z",
+      user: {
+        id: "usr-1",
+        name: "Ana Lima",
+        email: "ana@example.com",
+        role: "PATIENT",
+        createdAt: "2026-04-19T12:00:00.000Z",
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects patient response schema with passwordHash leak", () => {
+    const parsed = patientResponseSchema.safeParse({
+      id: "pat-1",
+      birthDate: "1990-01-01T00:00:00.000Z",
+      document: "12345678900",
+      phone: "11999999999",
+      createdAt: "2026-04-19T12:00:00.000Z",
+      user: {
+        id: "usr-1",
+        name: "Ana Lima",
+        email: "ana@example.com",
+        role: "PATIENT",
+        createdAt: "2026-04-19T12:00:00.000Z",
+        passwordHash: "hash123",
+      },
     });
 
     expect(parsed.success).toBe(false);
