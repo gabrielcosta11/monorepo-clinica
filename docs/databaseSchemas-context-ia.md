@@ -1,4 +1,4 @@
-// Prisma Schema - Clínica Psiquiátrica
+// Prisma Schema - Clinica Psiquiatrica
 
 generator client {
   provider = "prisma-client-js"
@@ -49,7 +49,7 @@ model Patient {
   phone     String
   createdAt DateTime @default(now())
 
-  user         User         @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
   appointments Appointment[]
 }
 
@@ -57,9 +57,10 @@ model Professional {
   id        String   @id @default(uuid())
   userId    String   @unique
   specialty String
+  document  String
   createdAt DateTime @default(now())
 
-  user         User         @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
   appointments Appointment[]
 }
 
@@ -72,8 +73,8 @@ model Appointment {
   notes          String?
   createdAt      DateTime          @default(now())
 
-  patient      Patient      @relation(fields: [patientId], references: [id])
-  professional Professional @relation(fields: [professionalId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  professional  Professional   @relation(fields: [professionalId], references: [id])
   medicalRecord MedicalRecord?
 }
 

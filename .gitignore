@@ -11,3 +11,6 @@ expo-env.d.ts
 .env.*.local
 .DS_Store
 /generated/prisma
+apps/api/generated/prisma
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal
