@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app";
+import { prisma } from "../src/lib/prisma";
 
 describe("patients module", () => {
+  beforeEach(async () => {
+    await prisma.patient.deleteMany();
+    await prisma.user.deleteMany();
+  });
+
   it("POST /patients should create patient with user", async () => {
     const app = buildApp();
 

@@ -3,8 +3,8 @@
 ## Snapshot
 
 Data da ultima atualizacao: 2026-04-19
-Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente; modulo `patients` da API foi iniciado com `POST /patients` e `GET /patients`.
-Proximo foco: plugar persistencia real do modulo `patients` via Prisma assim que o runtime `@prisma/client` estiver disponivel no ambiente.
+Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente; modulo `patients` da API esta funcional com `POST /patients` e `GET /patients` persistindo em SQLite via Prisma adapter.
+Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de conflitos de dominio) e iniciar o modulo `professionals`.
 
 ## Decisoes Consolidadas
 
@@ -49,7 +49,7 @@ Proximo foco: plugar persistencia real do modulo `patients` via Prisma assim que
 - Modulo `patients` foi criado em `apps/api/src/modules/patients` com separacao de `controller`, `service`, `repository` e `schema`.
 - Endpoint `POST /patients` implementado com validacao por schema compartilhado.
 - Endpoint `GET /patients` implementado com resposta validada por schema compartilhado.
-- Implementacao atual de repositorio de `patients` esta em memoria por limitacao de runtime Prisma no ambiente atual.
+- Repositorio de `patients` conectado ao Prisma com adapter SQLite (`@prisma/adapter-better-sqlite3`).
 
 ### Packages
 
@@ -62,7 +62,7 @@ Proximo foco: plugar persistencia real do modulo `patients` via Prisma assim que
 - `packages/domain` centraliza regras puras iniciais (`isValidUserName`, `hasRequiredAppointmentRelations`, `isValidIsoDateTime`, `canCreateMedicalRecord`).
 - Testes iniciais de dominio e validacao foram criados em cada pacote.
 - Existe um config de teste local `vitest.shared.config.mjs` para resolver alias e `zod` no ambiente atual.
-- Proximo foco tecnico recomendado: consolidar esses contratos no fluxo completo com persistencia real em banco.
+- Proximo foco tecnico recomendado: reutilizar os contratos no modulo `professionals` e nos proximos endpoints de `appointments`.
 
 ### Web
 
@@ -88,27 +88,26 @@ Proximo foco: plugar persistencia real do modulo `patients` via Prisma assim que
 - SQL da migration inicial aplicado ao SQLite local.
 - Verificacao SQLite confirmou tabelas `User`, `Patient`, `Professional`, `Appointment` e `MedicalRecord`.
 - Verificacao SQLite confirmou indices unicos principais e FKs de `Appointment` e `MedicalRecord`.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/patients.spec.ts`: passou com 1 arquivo e 3 testes.
 - `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts`: passou com 2 arquivos e 4 testes.
-- `tsc --noEmit -p apps/api/tsconfig.json`: falhou neste ambiente por deprecacao de `baseUrl` reportada pelo TypeScript local da API.
+- `tsc --noEmit -p apps/api/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/types/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/domain/tsconfig.json`: passou.
-- `tsc --noEmit -p packages/validation/tsconfig.json`: falhou por resolucao de modulo `zod` no workspace raiz.
+- `tsc --noEmit -p packages/validation/tsconfig.json`: passou.
 - `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 14 testes.
 
-Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker.
+Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`, e dependencias faltantes da API foram instaladas via `npm.cmd` sem gerar lockfile local da API. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker.
 
 ## Riscos / Atencoes
 
-- O modulo `patients` da API foi iniciado, mas a persistencia ainda nao esta conectada ao Prisma por falta do runtime `@prisma/client` no ambiente.
-- O `typecheck` isolado de `packages/validation` ainda depende de normalizar resolucao de `zod` no workspace raiz.
 - `prisma migrate dev` e `prisma db push` falharam neste ambiente com erro interno do schema-engine sem detalhe. A migration foi versionada com SQL gerado por `prisma migrate diff` e aplicada ao SQLite via `sqlite3`.
 - Os documentos de contexto originais tinham problemas de encoding; arquivos novos devem permanecer em ASCII quando possivel.
 - `architecture-context-ia.md` ainda menciona `packages/ui`, mas o repositorio atual possui `packages/design-tokens` e nao possui `packages/ui`.
 
 ## Proximo Passo Recomendado
 
-Concluir o modulo `patients` com persistencia real:
+Evoluir o modulo `patients` e iniciar novos modulos:
 
-- Disponibilizar runtime `@prisma/client` no ambiente e substituir o repositorio em memoria por repositorio Prisma.
-- Manter os contratos compartilhados ja criados (`createPatientWithUserInputSchema` e `patientResponseSchema`) como fonte de validacao.
-- Revalidar `typecheck` da API e de `packages/validation` apos normalizar resolucao de dependencias no workspace.
+- Adicionar filtros e paginacao em `GET /patients`.
+- Adicionar tratamento de conflito por `document` no dominio (se essa regra for formalizada no schema de banco).
+- Reaplicar o mesmo padrao modular (`controller/service/repository/schema`) em `professionals`.
