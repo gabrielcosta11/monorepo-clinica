@@ -75,3 +75,31 @@ export interface PatientResponse {
   createdAt: ISODateTimeString;
   user: PatientPublicUser;
 }
+
+export interface CreateProfessionalWithUserInput {
+  user: {
+    name: string;
+    email: string;
+    passwordHash: string;
+  };
+  professional: {
+    specialty: string;
+    document: string;
+  };
+}
+
+export interface ProfessionalPublicUser {
+  id: EntityId;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: ISODateTimeString;
+}
+
+export interface ProfessionalResponse {
+  id: EntityId;
+  specialty: string;
+  document: string;
+  createdAt: ISODateTimeString;
+  user: ProfessionalPublicUser;
+}

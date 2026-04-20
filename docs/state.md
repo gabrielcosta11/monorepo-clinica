@@ -3,8 +3,8 @@
 ## Snapshot
 
 Data da ultima atualizacao: 2026-04-19
-Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente; modulo `patients` da API esta funcional com `POST /patients` e `GET /patients` persistindo em SQLite via Prisma adapter.
-Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de conflitos de dominio) e iniciar o modulo `professionals`.
+Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente e profissional; modulos `patients` e `professionals` da API estao funcionais com `POST` e `GET` persistindo em SQLite via Prisma adapter.
+Proximo foco: iniciar o modulo `appointments` reaproveitando contratos compartilhados.
 
 ## Decisoes Consolidadas
 
@@ -39,6 +39,7 @@ Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de co
 - Schema Prisma real em `apps/api/prisma/schema.prisma` esta alinhado aos documentos de dominio e banco.
 - Configuracao do Prisma esta centralizada em `prisma.config.ts`, apontando para o schema da API.
 - Migration inicial versionada em `apps/api/prisma/migrations/20260419170000_init_clinic_schema/migration.sql`.
+- Migration `apps/api/prisma/migrations/20260419213000_add_patient_document_unique/migration.sql` criada e aplicada no banco local para garantir unicidade de `Patient.document`.
 - Banco SQLite local criado em `apps/api/prisma/dev.db` e nao deve ser versionado.
 - Prisma Client gerado em `apps/api/generated/prisma` e nao deve ser versionado.
 
@@ -50,6 +51,11 @@ Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de co
 - Endpoint `POST /patients` implementado com validacao por schema compartilhado.
 - Endpoint `GET /patients` implementado com resposta validada por schema compartilhado.
 - Repositorio de `patients` conectado ao Prisma com adapter SQLite (`@prisma/adapter-better-sqlite3`).
+- `POST /patients` agora aplica regra de dominio para conflito de `document` e retorna `409`.
+- Modulo `professionals` foi criado em `apps/api/src/modules/professionals` com separacao de `controller`, `service`, `repository` e `schema`.
+- Endpoint `POST /professionals` implementado com validacao por schema compartilhado.
+- Endpoint `GET /professionals` implementado com resposta validada por schema compartilhado.
+- `POST /professionals` retorna `409` em conflito de email (unicidade de `User.email`).
 
 ### Packages
 
@@ -57,8 +63,10 @@ Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de co
 - `packages/types`, `packages/validation` e `packages/domain` possuem `package.json`, `tsconfig`, exports e codigo inicial.
 - `packages/types` centraliza enums (`Role`, `AppointmentStatus`) e entidades (`User`, `Patient`, `Professional`, `Appointment`, `MedicalRecord`).
 - `packages/types` agora inclui tipos publicos de paciente (`CreatePatientWithUserInput`, `PatientPublicUser`, `PatientResponse`).
+- `packages/types` agora inclui tipos publicos de profissional (`CreateProfessionalWithUserInput`, `ProfessionalPublicUser`, `ProfessionalResponse`).
 - `packages/validation` centraliza schemas Zod das entidades e inputs de criacao (`create*InputSchema`).
 - `packages/validation` agora inclui `createPatientWithUserInputSchema`, `patientResponseSchema` e `patientListResponseSchema`.
+- `packages/validation` agora inclui `createProfessionalWithUserInputSchema`, `professionalResponseSchema` e `professionalListResponseSchema`.
 - `packages/domain` centraliza regras puras iniciais (`isValidUserName`, `hasRequiredAppointmentRelations`, `isValidIsoDateTime`, `canCreateMedicalRecord`).
 - Testes iniciais de dominio e validacao foram criados em cada pacote.
 - Existe um config de teste local `vitest.shared.config.mjs` para resolver alias e `zod` no ambiente atual.
@@ -88,13 +96,15 @@ Proximo foco: evoluir o modulo `patients` (filtros, paginacao e tratamento de co
 - SQL da migration inicial aplicado ao SQLite local.
 - Verificacao SQLite confirmou tabelas `User`, `Patient`, `Professional`, `Appointment` e `MedicalRecord`.
 - Verificacao SQLite confirmou indices unicos principais e FKs de `Appointment` e `MedicalRecord`.
-- `vitest run --config apps/api/vitest.config.ts apps/api/test/patients.spec.ts`: passou com 1 arquivo e 3 testes.
-- `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts`: passou com 2 arquivos e 4 testes.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/patients.spec.ts`: passou com 1 arquivo e 4 testes.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/professionals.spec.ts`: passou com 1 arquivo e 4 testes.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts apps/api/test/professionals.spec.ts`: passou com 3 arquivos e 9 testes.
+- `sqlite3 apps/api/prisma/dev.db "PRAGMA index_list('Patient');"`: confirmou indice unico `Patient_document_key`.
 - `tsc --noEmit -p apps/api/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/types/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/domain/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/validation/tsconfig.json`: passou.
-- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 14 testes.
+- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 16 testes.
 
 Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`, e dependencias faltantes da API foram instaladas via `npm.cmd` sem gerar lockfile local da API. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker.
 
@@ -106,8 +116,8 @@ Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes f
 
 ## Proximo Passo Recomendado
 
-Evoluir o modulo `patients` e iniciar novos modulos:
+Iniciar o modulo `appointments`:
 
-- Adicionar filtros e paginacao em `GET /patients`.
-- Adicionar tratamento de conflito por `document` no dominio (se essa regra for formalizada no schema de banco).
-- Reaplicar o mesmo padrao modular (`controller/service/repository/schema`) em `professionals`.
+- Criar estrutura modular `controller/service/repository/schema` em `apps/api/src/modules/appointments`.
+- Reusar enums e contratos compartilhados para `Appointment.status` e payloads de criacao/listagem.
+- Cobrir com testes de API os fluxos iniciais de criacao e listagem.

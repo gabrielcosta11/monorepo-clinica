@@ -3,10 +3,12 @@ import {
   USER_ROLE_VALUES,
   type Appointment,
   type CreatePatientWithUserInput as CreatePatientWithUserInputType,
+  type CreateProfessionalWithUserInput as CreateProfessionalWithUserInputType,
   type MedicalRecord,
   type Patient,
   type PatientResponse as PatientResponseType,
   type Professional,
+  type ProfessionalResponse as ProfessionalResponseType,
   type User,
 } from "@clinica/types/index";
 import { z } from "zod";
@@ -109,6 +111,35 @@ export const patientResponseSchema = z
 
 export const patientListResponseSchema = z.array(patientResponseSchema);
 
+export const createProfessionalWithUserInputSchema = z
+  .object({
+    user: createUserInputSchema.omit({ role: true }).strict(),
+    professional: createProfessionalInputSchema
+      .omit({ userId: true })
+      .strict(),
+  })
+  .strict() satisfies z.ZodType<CreateProfessionalWithUserInputType>;
+
+export const professionalResponseSchema = z
+  .object({
+    id: entityIdSchema,
+    specialty: z.string().trim().min(1),
+    document: z.string().trim().min(1),
+    createdAt: isoDateTimeSchema,
+    user: z
+      .object({
+        id: entityIdSchema,
+        name: z.string().trim().min(1),
+        email: z.string().email(),
+        role: userRoleSchema,
+        createdAt: isoDateTimeSchema,
+      })
+      .strict(),
+  })
+  .strict() satisfies z.ZodType<ProfessionalResponseType>;
+
+export const professionalListResponseSchema = z.array(professionalResponseSchema);
+
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type CreatePatientInput = z.infer<typeof createPatientInputSchema>;
 export type CreateProfessionalInput = z.infer<typeof createProfessionalInputSchema>;
@@ -120,3 +151,7 @@ export type CreatePatientWithUserInput = z.infer<
   typeof createPatientWithUserInputSchema
 >;
 export type PatientResponse = z.infer<typeof patientResponseSchema>;
+export type CreateProfessionalWithUserInput = z.infer<
+  typeof createProfessionalWithUserInputSchema
+>;
+export type ProfessionalResponse = z.infer<typeof professionalResponseSchema>;

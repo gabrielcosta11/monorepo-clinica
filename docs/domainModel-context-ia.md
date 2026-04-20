@@ -52,6 +52,7 @@ Observacoes:
 - `Patient` possui exatamente um `User`.
 - Campos comuns como `name` e `email` nao pertencem diretamente a `Patient`; eles pertencem a `User`.
 - `document` representa o documento especifico do paciente.
+- `document` de paciente deve ser unico no dominio de pacientes.
 
 ---
 
@@ -119,6 +120,7 @@ Atributos:
 - Um usuario deve ter nome obrigatorio.
 - Um usuario deve ter email unico.
 - Um paciente deve possuir um usuario vinculado.
+- Um paciente nao pode compartilhar o mesmo `document` com outro paciente.
 - Um profissional deve possuir um usuario vinculado.
 - Uma consulta deve possuir paciente e profissional vinculados.
 - Uma consulta deve possuir uma data valida.

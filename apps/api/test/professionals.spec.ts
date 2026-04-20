@@ -2,29 +2,28 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 
-describe("patients module", () => {
+describe("professionals module", () => {
   beforeEach(async () => {
     await prisma.professional.deleteMany();
     await prisma.patient.deleteMany();
     await prisma.user.deleteMany();
   });
 
-  it("POST /patients should create patient with user", async () => {
+  it("POST /professionals should create professional with user", async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: "POST",
-      url: "/patients",
+      url: "/professionals",
       payload: {
         user: {
-          name: "Ana Lima",
-          email: "ana@example.com",
+          name: "Dr. Carlos",
+          email: "carlos@example.com",
           passwordHash: "hash123",
         },
-        patient: {
-          birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
-          phone: "11999999999",
+        professional: {
+          specialty: "Psiquiatria",
+          document: "CRM12345",
         },
       },
     });
@@ -32,32 +31,31 @@ describe("patients module", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({
       id: expect.any(String),
-      document: "12345678900",
+      specialty: "Psiquiatria",
       user: {
-        name: "Ana Lima",
-        email: "ana@example.com",
-        role: "PATIENT",
+        name: "Dr. Carlos",
+        email: "carlos@example.com",
+        role: "PROFESSIONAL",
       },
     });
     expect(response.json().user.passwordHash).toBeUndefined();
   });
 
-  it("POST /patients should return 400 with invalid payload", async () => {
+  it("POST /professionals should return 400 with invalid payload", async () => {
     const app = buildApp();
 
     const response = await app.inject({
       method: "POST",
-      url: "/patients",
+      url: "/professionals",
       payload: {
         user: {
           name: "",
-          email: "ana@example.com",
+          email: "carlos@example.com",
           passwordHash: "hash123",
         },
-        patient: {
-          birthDate: "invalid-date",
-          document: "12345678900",
-          phone: "11999999999",
+        professional: {
+          specialty: "",
+          document: "CRM12345",
         },
       },
     });
@@ -65,81 +63,78 @@ describe("patients module", () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it("GET /patients should list created patients", async () => {
+  it("GET /professionals should list created professionals", async () => {
     const app = buildApp();
 
     await app.inject({
       method: "POST",
-      url: "/patients",
+      url: "/professionals",
       payload: {
         user: {
-          name: "Ana Lima",
-          email: "ana@example.com",
+          name: "Dr. Carlos",
+          email: "carlos@example.com",
           passwordHash: "hash123",
         },
-        patient: {
-          birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
-          phone: "11999999999",
+        professional: {
+          specialty: "Psiquiatria",
+          document: "CRM12345",
         },
       },
     });
 
     const response = await app.inject({
       method: "GET",
-      url: "/patients",
+      url: "/professionals",
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toHaveLength(1);
     expect(response.json()[0]).toMatchObject({
-      document: "12345678900",
+      specialty: "Psiquiatria",
       user: {
-        email: "ana@example.com",
+        email: "carlos@example.com",
       },
     });
   });
 
-  it("POST /patients should return 409 when document already exists", async () => {
+  it("POST /professionals should return 409 when email already exists", async () => {
     const app = buildApp();
 
     await app.inject({
       method: "POST",
-      url: "/patients",
+      url: "/professionals",
       payload: {
         user: {
-          name: "Ana Lima",
-          email: "ana@example.com",
+          name: "Dr. Carlos",
+          email: "carlos@example.com",
           passwordHash: "hash123",
         },
-        patient: {
-          birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
-          phone: "11999999999",
+        professional: {
+          specialty: "Psiquiatria",
+          document: "CRM12345",
         },
       },
     });
 
     const response = await app.inject({
       method: "POST",
-      url: "/patients",
+      url: "/professionals",
       payload: {
         user: {
-          name: "Bruno Souza",
-          email: "bruno@example.com",
+          name: "Dra. Julia",
+          email: "carlos@example.com",
           passwordHash: "hash456",
         },
-        patient: {
-          birthDate: "1988-01-01T00:00:00.000Z",
-          document: "12345678900",
-          phone: "11888888888",
+        professional: {
+          specialty: "Neurologia",
+          document: "CRM54321",
         },
       },
     });
 
     expect(response.statusCode).toBe(409);
     expect(response.json()).toEqual({
-      message: "Patient with this document already exists.",
+      message: "Professional with this email already exists.",
     });
   });
 });

@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   appointmentSchema,
   createPatientWithUserInputSchema,
+  createProfessionalWithUserInputSchema,
   createPatientInputSchema,
   createUserInputSchema,
   medicalRecordSchema,
   patientResponseSchema,
+  professionalResponseSchema,
 } from "./schemas";
 
 describe("validation schemas", () => {
@@ -138,5 +140,39 @@ describe("validation schemas", () => {
     });
 
     expect(parsed.success).toBe(false);
+  });
+
+  it("accepts create professional with user input", () => {
+    const parsed = createProfessionalWithUserInputSchema.safeParse({
+      user: {
+        name: "Dr. Carlos",
+        email: "carlos@example.com",
+        passwordHash: "hash123",
+      },
+      professional: {
+        specialty: "Psiquiatria",
+        document: "CRM12345",
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts professional response schema", () => {
+    const parsed = professionalResponseSchema.safeParse({
+      id: "pro-1",
+      specialty: "Psiquiatria",
+      document: "CRM12345",
+      createdAt: "2026-04-19T12:00:00.000Z",
+      user: {
+        id: "usr-1",
+        name: "Dr. Carlos",
+        email: "carlos@example.com",
+        role: "PROFESSIONAL",
+        createdAt: "2026-04-19T12:00:00.000Z",
+      },
+    });
+
+    expect(parsed.success).toBe(true);
   });
 });

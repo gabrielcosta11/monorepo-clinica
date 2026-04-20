@@ -8,6 +8,7 @@ import type {
 export interface PatientsRepository {
   create(input: CreatePatientWithUserInput): Promise<PatientResponse>;
   list(): Promise<PatientResponse[]>;
+  findByDocument(document: string): Promise<PatientResponse | null>;
 }
 
 interface PatientWithUserRecord {
@@ -83,5 +84,18 @@ export class PrismaPatientsRepository implements PatientsRepository {
     });
 
     return patients.map(toPatientResponse);
+  }
+
+  async findByDocument(document: string): Promise<PatientResponse | null> {
+    const patient = await this.client.patient.findFirst({
+      where: {
+        document,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return patient ? toPatientResponse(patient) : null;
   }
 }

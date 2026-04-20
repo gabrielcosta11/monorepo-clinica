@@ -45,7 +45,7 @@ model Patient {
   id        String   @id @default(uuid())
   userId    String   @unique
   birthDate DateTime
-  document  String
+  document  String   @unique
   phone     String
   createdAt DateTime @default(now())
 

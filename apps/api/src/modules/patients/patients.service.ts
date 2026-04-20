@@ -21,6 +21,14 @@ export class PatientsService {
   ) {}
 
   async create(input: CreatePatientWithUserInput): Promise<PatientResponse> {
+    const existingWithSameDocument = await this.repository.findByDocument(
+      input.patient.document,
+    );
+
+    if (existingWithSameDocument) {
+      throw new PatientsConflictError("Patient with this document already exists.");
+    }
+
     try {
       return await this.repository.create(input);
     } catch (error) {
