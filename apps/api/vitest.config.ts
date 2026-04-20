@@ -6,6 +6,9 @@ const apiDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(apiDir, "../..");
 
 export default defineConfig({
+  test: {
+    fileParallelism: false,
+  },
   resolve: {
     alias: {
       "@clinica/types": path.join(workspaceRoot, "packages", "types", "src"),

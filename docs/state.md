@@ -3,8 +3,8 @@
 ## Snapshot
 
 Data da ultima atualizacao: 2026-04-19
-Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente e profissional; modulos `patients` e `professionals` da API estao funcionais com `POST` e `GET` persistindo em SQLite via Prisma adapter.
-Proximo foco: iniciar o modulo `appointments` reaproveitando contratos compartilhados.
+Status geral: baseline Prisma criado; banco SQLite local possui as tabelas iniciais; Prisma Client foi gerado; base compartilhada em `packages/*` foi evoluida com contratos publicos de paciente e profissional; modulos `patients`, `professionals` e `appointments` da API estao funcionais com `POST` e `GET` persistindo em SQLite via Prisma adapter.
+Proximo foco: iniciar o modulo `medical-records` reaproveitando contratos compartilhados.
 
 ## Decisoes Consolidadas
 
@@ -56,6 +56,10 @@ Proximo foco: iniciar o modulo `appointments` reaproveitando contratos compartil
 - Endpoint `POST /professionals` implementado com validacao por schema compartilhado.
 - Endpoint `GET /professionals` implementado com resposta validada por schema compartilhado.
 - `POST /professionals` retorna `409` em conflito de email (unicidade de `User.email`).
+- Modulo `appointments` foi criado em `apps/api/src/modules/appointments` com separacao de `controller`, `service`, `repository` e `schema`.
+- Endpoint `POST /appointments` implementado com validacao por schema compartilhado.
+- Endpoint `GET /appointments` implementado com resposta validada por schema compartilhado.
+- `POST /appointments` retorna `409` quando `patientId` ou `professionalId` nao existem.
 
 ### Packages
 
@@ -67,6 +71,7 @@ Proximo foco: iniciar o modulo `appointments` reaproveitando contratos compartil
 - `packages/validation` centraliza schemas Zod das entidades e inputs de criacao (`create*InputSchema`).
 - `packages/validation` agora inclui `createPatientWithUserInputSchema`, `patientResponseSchema` e `patientListResponseSchema`.
 - `packages/validation` agora inclui `createProfessionalWithUserInputSchema`, `professionalResponseSchema` e `professionalListResponseSchema`.
+- `packages/validation` agora inclui `appointmentListResponseSchema` para listagem de consultas.
 - `packages/domain` centraliza regras puras iniciais (`isValidUserName`, `hasRequiredAppointmentRelations`, `isValidIsoDateTime`, `canCreateMedicalRecord`).
 - Testes iniciais de dominio e validacao foram criados em cada pacote.
 - Existe um config de teste local `vitest.shared.config.mjs` para resolver alias e `zod` no ambiente atual.
@@ -98,15 +103,17 @@ Proximo foco: iniciar o modulo `appointments` reaproveitando contratos compartil
 - Verificacao SQLite confirmou indices unicos principais e FKs de `Appointment` e `MedicalRecord`.
 - `vitest run --config apps/api/vitest.config.ts apps/api/test/patients.spec.ts`: passou com 1 arquivo e 4 testes.
 - `vitest run --config apps/api/vitest.config.ts apps/api/test/professionals.spec.ts`: passou com 1 arquivo e 4 testes.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/appointments.spec.ts`: passou com 1 arquivo e 4 testes.
 - `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts apps/api/test/professionals.spec.ts`: passou com 3 arquivos e 9 testes.
+- `vitest run --config apps/api/vitest.config.ts apps/api/test/health.spec.ts apps/api/test/patients.spec.ts apps/api/test/professionals.spec.ts apps/api/test/appointments.spec.ts`: passou com 4 arquivos e 13 testes.
 - `sqlite3 apps/api/prisma/dev.db "PRAGMA index_list('Patient');"`: confirmou indice unico `Patient_document_key`.
 - `tsc --noEmit -p apps/api/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/types/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/domain/tsconfig.json`: passou.
 - `tsc --noEmit -p packages/validation/tsconfig.json`: passou.
-- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 16 testes.
+- `vitest run --config vitest.shared.config.mjs packages/domain/src/rules.spec.ts packages/validation/src/schemas.spec.ts`: passou com 2 arquivos e 17 testes.
 
-Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`, e dependencias faltantes da API foram instaladas via `npm.cmd` sem gerar lockfile local da API. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker.
+Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes foram executadas via binarios locais em `apps/api/node_modules/.bin`, e dependencias faltantes da API foram instaladas via `npm.cmd` sem gerar lockfile local da API. O Vitest precisou rodar fora do sandbox por falha `spawn EPERM` ao iniciar worker. Para evitar condicoes de corrida no SQLite compartilhado em testes de API, `apps/api/vitest.config.ts` foi configurado com `fileParallelism: false`.
 
 ## Riscos / Atencoes
 
@@ -116,8 +123,8 @@ Observacao: `pnpm` nao estava disponivel no PATH do shell usado. As validacoes f
 
 ## Proximo Passo Recomendado
 
-Iniciar o modulo `appointments`:
+Iniciar o modulo `medical-records`:
 
-- Criar estrutura modular `controller/service/repository/schema` em `apps/api/src/modules/appointments`.
-- Reusar enums e contratos compartilhados para `Appointment.status` e payloads de criacao/listagem.
+- Criar estrutura modular `controller/service/repository/schema` em `apps/api/src/modules/medical-records`.
+- Reusar contratos compartilhados de `MedicalRecord` e garantir vinculo obrigatorio com `Appointment`.
 - Cobrir com testes de API os fluxos iniciais de criacao e listagem.

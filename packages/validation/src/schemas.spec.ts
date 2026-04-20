@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  appointmentListResponseSchema,
   appointmentSchema,
   createPatientWithUserInputSchema,
   createProfessionalWithUserInputSchema,
@@ -172,6 +173,21 @@ describe("validation schemas", () => {
         createdAt: "2026-04-19T12:00:00.000Z",
       },
     });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts appointment list response schema", () => {
+    const parsed = appointmentListResponseSchema.safeParse([
+      {
+        id: "apt-1",
+        patientId: "pat-1",
+        professionalId: "pro-1",
+        date: "2026-04-19T13:00:00.000Z",
+        status: "SCHEDULED",
+        createdAt: "2026-04-19T12:00:00.000Z",
+      },
+    ]);
 
     expect(parsed.success).toBe(true);
   });

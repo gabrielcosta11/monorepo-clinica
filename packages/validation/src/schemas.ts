@@ -110,6 +110,7 @@ export const patientResponseSchema = z
   .strict() satisfies z.ZodType<PatientResponseType>;
 
 export const patientListResponseSchema = z.array(patientResponseSchema);
+export const appointmentListResponseSchema = z.array(appointmentSchema);
 
 export const createProfessionalWithUserInputSchema = z
   .object({

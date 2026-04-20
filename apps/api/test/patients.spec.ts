@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
 import { buildApp } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 
+function uniqueValue(prefix: string): string {
+  return `${prefix}-${randomUUID().slice(0, 8)}`;
+}
+
 describe("patients module", () => {
   beforeEach(async () => {
+    await prisma.medicalRecord.deleteMany();
+    await prisma.appointment.deleteMany();
     await prisma.professional.deleteMany();
     await prisma.patient.deleteMany();
     await prisma.user.deleteMany();
@@ -11,6 +18,8 @@ describe("patients module", () => {
 
   it("POST /patients should create patient with user", async () => {
     const app = buildApp();
+    const email = `${uniqueValue("ana")}@example.com`;
+    const document = uniqueValue("doc");
 
     const response = await app.inject({
       method: "POST",
@@ -18,12 +27,12 @@ describe("patients module", () => {
       payload: {
         user: {
           name: "Ana Lima",
-          email: "ana@example.com",
+          email,
           passwordHash: "hash123",
         },
         patient: {
           birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
+          document,
           phone: "11999999999",
         },
       },
@@ -32,10 +41,10 @@ describe("patients module", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({
       id: expect.any(String),
-      document: "12345678900",
+      document,
       user: {
         name: "Ana Lima",
-        email: "ana@example.com",
+        email,
         role: "PATIENT",
       },
     });
@@ -67,6 +76,8 @@ describe("patients module", () => {
 
   it("GET /patients should list created patients", async () => {
     const app = buildApp();
+    const email = `${uniqueValue("ana")}@example.com`;
+    const document = uniqueValue("doc");
 
     await app.inject({
       method: "POST",
@@ -74,12 +85,12 @@ describe("patients module", () => {
       payload: {
         user: {
           name: "Ana Lima",
-          email: "ana@example.com",
+          email,
           passwordHash: "hash123",
         },
         patient: {
           birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
+          document,
           phone: "11999999999",
         },
       },
@@ -93,15 +104,18 @@ describe("patients module", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toHaveLength(1);
     expect(response.json()[0]).toMatchObject({
-      document: "12345678900",
+      document,
       user: {
-        email: "ana@example.com",
+        email,
       },
     });
   });
 
   it("POST /patients should return 409 when document already exists", async () => {
     const app = buildApp();
+    const emailA = `${uniqueValue("ana")}@example.com`;
+    const emailB = `${uniqueValue("bruno")}@example.com`;
+    const document = uniqueValue("doc");
 
     await app.inject({
       method: "POST",
@@ -109,12 +123,12 @@ describe("patients module", () => {
       payload: {
         user: {
           name: "Ana Lima",
-          email: "ana@example.com",
+          email: emailA,
           passwordHash: "hash123",
         },
         patient: {
           birthDate: "1990-01-01T00:00:00.000Z",
-          document: "12345678900",
+          document,
           phone: "11999999999",
         },
       },
@@ -126,12 +140,12 @@ describe("patients module", () => {
       payload: {
         user: {
           name: "Bruno Souza",
-          email: "bruno@example.com",
+          email: emailB,
           passwordHash: "hash456",
         },
         patient: {
           birthDate: "1988-01-01T00:00:00.000Z",
-          document: "12345678900",
+          document,
           phone: "11888888888",
         },
       },

@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
 import { buildApp } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 
+function uniqueValue(prefix: string): string {
+  return `${prefix}-${randomUUID().slice(0, 8)}`;
+}
+
 describe("professionals module", () => {
   beforeEach(async () => {
+    await prisma.medicalRecord.deleteMany();
+    await prisma.appointment.deleteMany();
     await prisma.professional.deleteMany();
     await prisma.patient.deleteMany();
     await prisma.user.deleteMany();
@@ -11,6 +18,8 @@ describe("professionals module", () => {
 
   it("POST /professionals should create professional with user", async () => {
     const app = buildApp();
+    const email = `${uniqueValue("carlos")}@example.com`;
+    const document = uniqueValue("crm");
 
     const response = await app.inject({
       method: "POST",
@@ -18,12 +27,12 @@ describe("professionals module", () => {
       payload: {
         user: {
           name: "Dr. Carlos",
-          email: "carlos@example.com",
+          email,
           passwordHash: "hash123",
         },
         professional: {
           specialty: "Psiquiatria",
-          document: "CRM12345",
+          document,
         },
       },
     });
@@ -34,7 +43,7 @@ describe("professionals module", () => {
       specialty: "Psiquiatria",
       user: {
         name: "Dr. Carlos",
-        email: "carlos@example.com",
+        email,
         role: "PROFESSIONAL",
       },
     });
@@ -65,6 +74,8 @@ describe("professionals module", () => {
 
   it("GET /professionals should list created professionals", async () => {
     const app = buildApp();
+    const email = `${uniqueValue("carlos")}@example.com`;
+    const document = uniqueValue("crm");
 
     await app.inject({
       method: "POST",
@@ -72,12 +83,12 @@ describe("professionals module", () => {
       payload: {
         user: {
           name: "Dr. Carlos",
-          email: "carlos@example.com",
+          email,
           passwordHash: "hash123",
         },
         professional: {
           specialty: "Psiquiatria",
-          document: "CRM12345",
+          document,
         },
       },
     });
@@ -92,13 +103,16 @@ describe("professionals module", () => {
     expect(response.json()[0]).toMatchObject({
       specialty: "Psiquiatria",
       user: {
-        email: "carlos@example.com",
+        email,
       },
     });
   });
 
   it("POST /professionals should return 409 when email already exists", async () => {
     const app = buildApp();
+    const sharedEmail = `${uniqueValue("carlos")}@example.com`;
+    const documentA = uniqueValue("crm");
+    const documentB = uniqueValue("crm");
 
     await app.inject({
       method: "POST",
@@ -106,12 +120,12 @@ describe("professionals module", () => {
       payload: {
         user: {
           name: "Dr. Carlos",
-          email: "carlos@example.com",
+          email: sharedEmail,
           passwordHash: "hash123",
         },
         professional: {
           specialty: "Psiquiatria",
-          document: "CRM12345",
+          document: documentA,
         },
       },
     });
@@ -122,12 +136,12 @@ describe("professionals module", () => {
       payload: {
         user: {
           name: "Dra. Julia",
-          email: "carlos@example.com",
+          email: sharedEmail,
           passwordHash: "hash456",
         },
         professional: {
           specialty: "Neurologia",
-          document: "CRM54321",
+          document: documentB,
         },
       },
     });

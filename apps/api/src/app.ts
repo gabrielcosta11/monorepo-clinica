@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { appointmentsController } from "./modules/appointments";
 import { professionalsController } from "./modules/professionals";
 import { patientsController } from "./modules/patients";
 
@@ -11,6 +12,7 @@ export function buildApp() {
 
   app.register(patientsController);
   app.register(professionalsController);
+  app.register(appointmentsController);
 
   return app;
 }
